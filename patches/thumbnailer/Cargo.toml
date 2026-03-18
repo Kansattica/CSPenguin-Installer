@@ -1,0 +1,22 @@
+[package]
+name = "clip-thumbnailer"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "clip-thumbnailer"
+path = "main.rs"
+
+[dependencies]
+memmap2 = "0.9"
+memchr = "2"
+rusqlite = { version = "0.31", features = ["bundled"] }
+zune-png = "0.4"
+zune-core = "0.4"
+png = "0.17"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
