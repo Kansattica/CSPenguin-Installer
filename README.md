@@ -41,11 +41,14 @@ The script downloads CSP and WebView2, sets up a Wine prefix, installs dependenc
 5. WebView2 Runtime (standalone installer)
 6. dcomp.dll, a DirectComposition shim so WebView2 panels render correctly
 7. mfplat/mfreadwrite/winegstreamer patches for timelapse/video export
-8. KDE window rules (KDE only) so ribbon bar dropdowns appear on top of CSP instead of behind it. If this doesn't apply properl you can right click your CSP icon in your taskbar or set up window rules yourself!
+8. `.clip` file thumbnails via a native thumbnailer binary
+9. `.clip` file association so double-clicking opens CSP
+10. KDE window rules (KDE only) so ribbon bar dropdowns appear on top of CSP instead of behind it. If this doesn't apply properly you can right click your CSP icon in your taskbar or set up window rules yourself!
+11. A wineserver pre-warm service so CSP launches a bit faster
 
 
 ## Known issues!!
-- Video export at non-default framerates could break encoding; not thoroughly tested.
+- Timelapse should work 100%, but animation export at non-default framerates could break encoding; not thoroughly tested.
 - The timelapse patch DLLs are built against the bundled Wine version 10.20. Trying to use them elsewhere is not recommended.
 - The installer can take a while, especially if downloading dotnet files.
 - The first launch of CSP will be slow. Restarting your PC helps with subsequent launches!
