@@ -21,8 +21,8 @@ fi
 WINEPREFIX="${WINEPREFIX:-$HOME/.wine-csp}"
 WINEARCH=win64
 
-WINE_VERSION="10.20"
-WINE_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/${WINE_VERSION}/wine-${WINE_VERSION}-staging-amd64.tar.xz"
+WINE_VERSION="11.4"
+WINE_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/${WINE_VERSION}/wine-${WINE_VERSION}-plain-amd64.tar.xz"
 WEBVIEW2_URL="https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/76eb3dc4-7851-45b7-a392-460523b0e2bb/MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
 LAUNCHER_DIR="$HOME/.local/share/cspenguin"
 WINE_DIR="$LAUNCHER_DIR/wine-${WINE_VERSION}"
@@ -227,7 +227,8 @@ if [[ ! -x "$WINE_BIN" ]]; then
     echo "  - extracting Wine ${WINE_VERSION}..."
     mkdir -p "$LAUNCHER_DIR"
     tar -xf "$_wine_tar" -C "$LAUNCHER_DIR"
-    for _d in "$LAUNCHER_DIR/wine-${WINE_VERSION}-staging-amd64" \
+    for _d in "$LAUNCHER_DIR/wine-${WINE_VERSION}-plain-amd64" \
+               "$LAUNCHER_DIR/wine-${WINE_VERSION}-staging-amd64" \
                "$LAUNCHER_DIR/wine-${WINE_VERSION}-amd64"; do
         [[ -d "$_d" ]] && mv "$_d" "$WINE_DIR" && break
     done
@@ -349,13 +350,13 @@ cp "$PTHREAD_DLL"  "$SYS32/libwinpthread-1.dll"
 run wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v "dcomp" /t REG_SZ /d "native,builtin" /f
 ok "dcomp.dll (WebView2 login/license panels)"
 
-PATCHES_WIN="$SCRIPT_DIR/patches/x86_64-windows"
-PATCHES_UNIX="$SCRIPT_DIR/patches/x86_64-unix"
+PATCHES_WIN="$SCRIPT_DIR/patches/x86_64-windows-wine11.4"
+PATCHES_UNIX="$SCRIPT_DIR/patches/x86_64-unix-wine11.4"
 
-ensure_asset "patches/x86_64-windows/mfplat.dll" "$PATCHES_WIN/mfplat.dll"
-ensure_asset "patches/x86_64-windows/mfreadwrite.dll" "$PATCHES_WIN/mfreadwrite.dll"
-ensure_asset "patches/x86_64-windows/winegstreamer.dll" "$PATCHES_WIN/winegstreamer.dll"
-ensure_asset "patches/x86_64-unix/winegstreamer.so" "$PATCHES_UNIX/winegstreamer.so"
+ensure_asset "patches/x86_64-windows-wine11.4/mfplat.dll" "$PATCHES_WIN/mfplat.dll"
+ensure_asset "patches/x86_64-windows-wine11.4/mfreadwrite.dll" "$PATCHES_WIN/mfreadwrite.dll"
+ensure_asset "patches/x86_64-windows-wine11.4/winegstreamer.dll" "$PATCHES_WIN/winegstreamer.dll"
+ensure_asset "patches/x86_64-unix-wine11.4/winegstreamer.so" "$PATCHES_UNIX/winegstreamer.so"
 
 WINE_WIN="$WINE_DIR/lib/wine/x86_64-windows"
 [[ -d "$WINE_WIN" ]] || WINE_WIN="$WINE_DIR/lib64/wine/x86_64-windows"
