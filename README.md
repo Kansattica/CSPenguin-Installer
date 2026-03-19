@@ -46,6 +46,11 @@ The script downloads CSP and WebView2, sets up a Wine prefix, installs dependenc
 10. KDE window rules (KDE only) so ribbon bar dropdowns appear on top of CSP instead of behind it. If this doesn't apply properly you can right click your CSP icon in your taskbar or set up window rules yourself!
 11. A wineserver pre-warm service so CSP launches a bit faster
 
+
+## Wine 11.4
+I'm in the process of switcihng everything over to run Wine 11.4.
+It fixes some issues that 10.20 couldn't solve, including menus on non-KDE desktops, and provides more consistent pen pressure experience. The install script still uses 10.20 for now — once 11.4 has been tested more thoroughly it'll become the default.
+
 ## Known issues!!
 - Timelapse should work 100%, but animation export at non-default framerates could break encoding; not thoroughly tested.
 - The timelapse patch DLLs are built against the bundled Wine version 10.20. Trying to use them elsewhere is not recommended.
