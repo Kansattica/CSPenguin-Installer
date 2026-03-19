@@ -351,35 +351,24 @@ DCOMP_DLL="$SCRIPT_DIR/patches/dcomp/dcomp.dll"
 DCOMP_SRC="$SCRIPT_DIR/patches/dcomp/dcomp_csp.cpp"
 DCOMP_DEF="$SCRIPT_DIR/patches/dcomp/dcomp.def"
 
-ensure_asset "patches/dcomp/dcomp.dll" "$DCOMP_DLL"
+PTHREAD_DLL="$SCRIPT_DIR/patches/dcomp/libwinpthread-1.dll"
+
+ensure_asset "patches/dcomp/dcomp.dll"          "$DCOMP_DLL"
+ensure_asset "patches/dcomp/libwinpthread-1.dll" "$PTHREAD_DLL"
 
 if command -v x86_64-w64-mingw32-g++ >/dev/null 2>&1 && [[ -f "$DCOMP_SRC" ]]; then
-    _winpthread_a=""
-    for _p in \
-        /usr/x86_64-w64-mingw32/lib/libwinpthread.a \
-        /usr/lib/gcc/x86_64-w64-mingw32/*/libwinpthread.a; do
-        [[ -f "$_p" ]] && _winpthread_a="$_p" && break
-    done
-    wait_for "building dcomp.dll" x86_64-w64-mingw32-g++ -std=c++17 -O2 -shared \
+    wait_for "building dcomp.dll from source" x86_64-w64-mingw32-g++ -std=c++17 -O2 -shared \
         -static-libgcc -static-libstdc++ \
         -o "$DCOMP_DLL" "$DCOMP_SRC" "$DCOMP_DEF" \
-        -ld3d11 -ldxgi -luser32 -lgdi32 -ldxguid -luuid \
-        ${_winpthread_a:+"$_winpthread_a"}
-fi
-[[ -f "$DCOMP_DLL" ]] || die "dcomp.dll not found in patches/dcomp/"
-
-cp "$DCOMP_DLL" "$LAUNCHER_DIR/dcomp.dll"
-cp "$DCOMP_DLL" "$SYS32/dcomp.dll"
-
-# always copy MinGW pthread runtime (dcomp.dll needs it)
-_pthread_dll=$(find /usr/x86_64-w64-mingw32/bin /usr/lib/gcc/x86_64-w64-mingw32 \
-    -name "libwinpthread-1.dll" 2>/dev/null | head -1)
-if [[ -n "$_pthread_dll" ]]; then
-    cp "$_pthread_dll" "$SYS32/"
-    ok "libwinpthread-1.dll"
+        -ld3d11 -ldxgi -luser32 -lgdi32 -ldxguid -luuid
 else
-    warn "libwinpthread-1.dll not found; install mingw-w64 if dcomp fails to load"
+    ok "dcomp.dll (prebuilt)"
 fi
+[[ -f "$DCOMP_DLL" ]] || die "dcomp.dll not found - download failed or build error"
+
+cp "$DCOMP_DLL"    "$LAUNCHER_DIR/dcomp.dll"
+cp "$DCOMP_DLL"    "$SYS32/dcomp.dll"
+cp "$PTHREAD_DLL"  "$SYS32/libwinpthread-1.dll"
 run wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v "dcomp" /t REG_SZ /d "native,builtin" /f
 ok "dcomp.dll (WebView2 login/license panels)"
 
