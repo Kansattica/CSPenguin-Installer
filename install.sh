@@ -570,6 +570,18 @@ echo "  This runs a tiny background process on login (uses ~2MB RAM)."
 echo ""
 read -rp "  Enable wineserver pre-warm? [Y/n] " _prewarm </dev/tty
 if [[ "${_prewarm,,}" != "n" ]]; then
+    _pw_missing=()
+    command -v wmctrl  >/dev/null 2>&1 || _pw_missing+=(wmctrl)
+    command -v xdotool >/dev/null 2>&1 || _pw_missing+=(xdotool)
+    if [[ ${#_pw_missing[@]} -gt 0 ]]; then
+        echo "  pre-warm needs: ${_pw_missing[*]}"
+        case "$(_detect_pm)" in
+            pacman) sudo pacman -S --needed "${_pw_missing[@]}" ;;
+            dnf)    sudo dnf install -y "${_pw_missing[@]}" ;;
+            apt)    sudo apt install -y "${_pw_missing[@]}" ;;
+            *)      warn "install ${_pw_missing[*]} manually for the window-hide feature" ;;
+        esac
+    fi
     mkdir -p "$HOME/.config/systemd/user"
     cat > "$HOME/.config/systemd/user/csp-wineserver.service" << EOF
 [Unit]
@@ -583,6 +595,7 @@ Environment=WINESERVER=$WINESERVER_BIN
 Environment=WINEDEBUG=-all
 ExecStartPre=-$WINESERVER_BIN -k
 ExecStart=$WINESERVER_BIN -f
+ExecStartPost=/bin/bash -c 'for i in \$(seq 1 20); do sleep 0.5; wid=\$(wmctrl -l | awk "/Wine Desktop/{print \$1}"); [ -n "\$wid" ] && { xdotool windowunmap "\$wid"; break; }; done'
 Restart=always
 RestartSec=5s
 
@@ -591,6 +604,7 @@ WantedBy=default.target
 EOF
     if systemctl --user daemon-reload 2>/dev/null && systemctl --user enable --now csp-wineserver.service 2>/dev/null; then
         ok "wineserver service enabled"
+        warn "you may see a brief blue 'Wine Desktop' on login."
     else
         warn "could not enable wineserver service (non-systemd session)"
     fi
