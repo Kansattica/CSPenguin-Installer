@@ -100,16 +100,14 @@ _gst_ok() { command -v gst-inspect-1.0 >/dev/null 2>&1 && gst-inspect-1.0 h264pa
 
 _install_deps_pacman() {
     local pkgs=()
-    command -v wine       >/dev/null 2>&1 || pkgs+=(wine)
     command -v winetricks >/dev/null 2>&1 || pkgs+=(winetricks)
     command -v wget       >/dev/null 2>&1 || pkgs+=(wget)
     _gst_ok                                || pkgs+=(gst-plugins-bad gst-plugins-good)
-    [[ ${#pkgs[@]} -gt 0 ]] && sudo pacman -S --needed "${pkgs[@]}"
+    [[ ${#pkgs[@]} -gt 0 ]] && sudo pacman -S --needed --noconfirm "${pkgs[@]}"
 }
 
 _install_deps_dnf() {
     local pkgs=()
-    command -v wine       >/dev/null 2>&1 || pkgs+=(wine)
     command -v winetricks >/dev/null 2>&1 || pkgs+=(winetricks)
     command -v wget       >/dev/null 2>&1 || pkgs+=(wget)
     _gst_ok                                || pkgs+=(gstreamer1-plugins-bad-free gstreamer1-plugins-good)
@@ -122,27 +120,6 @@ _install_deps_apt() {
     command -v wget       >/dev/null 2>&1 || pkgs+=(wget)
     _gst_ok                                || pkgs+=(gstreamer1.0-plugins-bad gstreamer1.0-plugins-good)
     sudo apt install -y "${pkgs[@]}"
-
-    local need_wine=0
-    if ! command -v wine >/dev/null 2>&1; then
-        need_wine=1
-    else
-        local _v; _v=$(wine --version 2>/dev/null | grep -oP '\d+' | head -1)
-        [[ "$_v" -ge 9 ]] || need_wine=1
-    fi
-
-    if [[ $need_wine -eq 1 ]]; then
-        echo "  setting up WineHQ repository..."
-        sudo mkdir -pm755 /etc/apt/keyrings
-        wget -O - https://dl.winehq.org/wine-builds/winehq.key | \
-            sudo gpg --dearmor -o /etc/apt/keyrings/winehq-archive.key -
-        . /etc/os-release
-        sudo dpkg --add-architecture i386
-        sudo wget -NP /etc/apt/sources.list.d/ \
-            "https://dl.winehq.org/wine-builds/ubuntu/dists/${UBUNTU_CODENAME:-$VERSION_CODENAME}/winehq-${UBUNTU_CODENAME:-$VERSION_CODENAME}.sources"
-        sudo apt update
-        sudo apt install -y --install-recommends winehq-staging
-    fi
 }
 
 : > "$LOG_FILE"
@@ -576,7 +553,7 @@ if [[ "${_prewarm,,}" != "n" ]]; then
     if [[ ${#_pw_missing[@]} -gt 0 ]]; then
         echo "  pre-warm needs: ${_pw_missing[*]}"
         case "$(_detect_pm)" in
-            pacman) sudo pacman -S --needed "${_pw_missing[@]}" ;;
+            pacman) sudo pacman -S --needed --noconfirm "${_pw_missing[@]}" ;;
             dnf)    sudo dnf install -y "${_pw_missing[@]}" ;;
             apt)    sudo apt install -y "${_pw_missing[@]}" ;;
             *)      warn "install ${_pw_missing[*]} manually for the window-hide feature" ;;
