@@ -52,6 +52,7 @@ The script downloads CSP and WebView2, sets up a Wine prefix, installs dependenc
 - The timelapse patch DLLs are built against the bundled Wine version 10.20. Trying to use them elsewhere is not recommended.
 - The installer can take a while, especially if downloading dotnet files.
 - The first launch of CSP will be slow. Restarting your PC helps with subsequent launches!
+- Ribbon menus are broken on non KDE desktop enviroments.
 
 ## Support
 This project is my gift to the community. If you have problems feel free to open an issue, or get in touch with me. But please do not expect me to fix installs on a case by case basis. 
