@@ -19,8 +19,7 @@ Everything else (Wine, Winetricks, GStreamer plugins) is detected and installed 
 One-liner via curl:
 
 ```bash
-
-
+curl -fsSL https://raw.githubusercontent.com/parka6060/CSPenguin-Installer/main/install.sh | bash
 ```
 
 Or clone the repo via:
