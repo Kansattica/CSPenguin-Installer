@@ -255,11 +255,11 @@ if [[ $SKIP_WINETRICKS -eq 1 ]]; then
 else
     _wt_log="$WINEPREFIX/winetricks.log"
     _wt_needed=()
-    for pkg in corefonts vcrun2022 dotnet48 dxvk vkd3d; do
+    for pkg in corefonts cjkfonts vcrun2022 dotnet48 dxvk vkd3d; do
         grep -qx "$pkg" "$_wt_log" 2>/dev/null || _wt_needed+=("$pkg")
     done
     if [[ ${#_wt_needed[@]} -eq 0 ]]; then
-        ok "corefonts vcrun2022 dotnet48 dxvk vkd3d (already installed)"
+        ok "corefonts cjkfonts vcrun2022 dotnet48 dxvk vkd3d (already installed)"
     else
         [[ " ${_wt_needed[*]} " == *" dotnet48 "* ]] && warn "This step could take a while, pet a cat or something!"
         wait_for "${_wt_needed[*]}" env WINEDEBUG=-all winetricks -q "${_wt_needed[@]}"
