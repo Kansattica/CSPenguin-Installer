@@ -22,7 +22,7 @@ WINEPREFIX="${WINEPREFIX:-$HOME/.wine-csp}"
 WINEARCH=win64
 
 WINE_VERSION="11.4"
-WINE_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/${WINE_VERSION}/wine-${WINE_VERSION}-amd64.tar.xz"
+WINE_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/${WINE_VERSION}/wine-${WINE_VERSION}-staging-amd64.tar.xz"
 WEBVIEW2_URL="https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/76eb3dc4-7851-45b7-a392-460523b0e2bb/MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
 LAUNCHER_DIR="$HOME/.local/share/cspenguin"
 WINE_DIR="$LAUNCHER_DIR/wine-${WINE_VERSION}"
