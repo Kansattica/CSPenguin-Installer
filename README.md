@@ -34,7 +34,7 @@ The script downloads CSP and WebView2, sets up a Wine prefix, installs dependenc
 
 ## What gets installed
 
-1. Wine 11.4 Staging (bundled, portable) at `~/.local/share/cspenguin/wine-11.4/`
+1. Wine 11.4 (bundled, portable) at `~/.local/share/cspenguin/wine-11.4/`
 2. Wine prefix at `~/.wine-csp`
 3. Corefonts, cjkfonts, vcrun2022, and dotnet48 as runtime dependencies
 4. DXVK + VKD3D
