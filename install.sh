@@ -573,7 +573,7 @@ Environment=WINESERVER=$WINESERVER_BIN
 Environment=WINEDEBUG=-all
 ExecStartPre=-$WINESERVER_BIN -k
 ExecStart=$WINESERVER_BIN -f
-ExecStartPost=/bin/bash -c 'for i in \$(seq 1 20); do sleep 0.5; wid=\$(wmctrl -l | awk "/Wine Desktop/{print \$1}"); [ -n "\$wid" ] && { xdotool windowunmap "\$wid"; break; }; done'
+ExecStartPost=/bin/bash -c 'for i in \$(seq 1 20); do sleep 0.5; wid=\$(wmctrl -l | awk "/Wine Desktop/{print \$1}"); [ -n "\$wid" ] && { xdotool windowunmap "\$wid"; break; }; done; exit 0'
 Restart=always
 RestartSec=5s
 
