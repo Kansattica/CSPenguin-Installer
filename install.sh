@@ -221,15 +221,15 @@ if [[ -n "${CSP_URL:-}" ]]; then
 else
     ok "Clip Studio Paint (local file)"
 fi
-_wine_tar="$DOWNLOAD_DIR/wine-${WINE_VERSION}-amd64.tar.xz"
+_wine_tar="$DOWNLOAD_DIR/wine-${WINE_VERSION}-staging-amd64.tar.xz"
 if [[ ! -x "$WINE_BIN" ]]; then
     download "Wine ${WINE_VERSION}" "$WINE_URL" "$_wine_tar"
     echo "  - extracting Wine ${WINE_VERSION}..."
     mkdir -p "$LAUNCHER_DIR"
     tar -xf "$_wine_tar" -C "$LAUNCHER_DIR"
-    for _d in "$LAUNCHER_DIR/wine-${WINE_VERSION}-plain-amd64" \
-               "$LAUNCHER_DIR/wine-${WINE_VERSION}-staging-amd64" \
-               "$LAUNCHER_DIR/wine-${WINE_VERSION}-amd64"; do
+    for _d in "$LAUNCHER_DIR/wine-${WINE_VERSION}-staging-amd64" \
+               "$LAUNCHER_DIR/wine-${WINE_VERSION}-amd64" \
+               "$LAUNCHER_DIR/wine-${WINE_VERSION}-plain-amd64"; do
         [[ -d "$_d" ]] && mv "$_d" "$WINE_DIR" && break
     done
     [[ -x "$WINE_BIN" ]] || die "Wine ${WINE_VERSION} extraction failed"
