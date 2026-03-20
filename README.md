@@ -2,7 +2,7 @@
 
 **CSPenguin-Installer** is an install script and patch set for CLIP STUDIO PAINT. It fixes the **asset store, login panels, file thumbnails, and timelapse/animation export** all while being very easy to install.
 
-The current project is **functional** but in testing! The script is tested throughly in **CachyOS + KDE**, I'll find time to to test on other distros as soon as I survival my semester! I would really appreciate people testing it on other distros and reporting any issues they find! I'm also in the process of moving the install script to use Wine 11.4, which solves some existing known issues.
+The current project is **functional** but in testing! The script is tested throughly in **CachyOS + KDE**, I'll find time to to test on other distros as soon as I survival my semester! I would really appreciate people testing it on other distros and reporting any issues they find!
 
 Supports CSP 4.x & 5.x at the moment.
 
