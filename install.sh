@@ -24,10 +24,12 @@ WINEARCH=win64
 WINE_VERSION="11.4"
 WINE_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/${WINE_VERSION}/wine-${WINE_VERSION}-amd64.tar.xz"
 WEBVIEW2_URL="https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/76eb3dc4-7851-45b7-a392-460523b0e2bb/MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
+WINETRICKS_URL="https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks"
 LAUNCHER_DIR="$HOME/.local/share/cspenguin"
 WINE_DIR="$LAUNCHER_DIR/wine-${WINE_VERSION}"
 WINE_BIN="$WINE_DIR/bin/wine"
 WINESERVER_BIN="$WINE_DIR/bin/wineserver"
+WINETRICKS_BIN="$LAUNCHER_DIR/winetricks"
 LAUNCH_SCRIPT="$LAUNCHER_DIR/csp-launch.sh"
 LAUNCHER_STUDIO="$LAUNCHER_DIR/clipstudio-launch.sh"
 CSP_INSTALL_PATH="$WINEPREFIX/drive_c/Program Files/CELSYS/CLIP STUDIO 1.5/CLIP STUDIO PAINT/CLIPStudioPaint.exe"
@@ -100,25 +102,22 @@ _gst_ok() { command -v gst-inspect-1.0 >/dev/null 2>&1 && gst-inspect-1.0 h264pa
 
 _install_deps_pacman() {
     local pkgs=()
-    command -v winetricks >/dev/null 2>&1 || pkgs+=(winetricks)
-    command -v wget       >/dev/null 2>&1 || pkgs+=(wget)
-    _gst_ok                                || pkgs+=(gst-plugins-bad gst-plugins-good)
+    command -v wget >/dev/null 2>&1 || pkgs+=(wget)
+    _gst_ok         || pkgs+=(gst-plugins-bad gst-plugins-good)
     [[ ${#pkgs[@]} -gt 0 ]] && sudo pacman -S --needed --noconfirm "${pkgs[@]}"
 }
 
 _install_deps_dnf() {
     local pkgs=()
-    command -v winetricks >/dev/null 2>&1 || pkgs+=(winetricks)
-    command -v wget       >/dev/null 2>&1 || pkgs+=(wget)
-    _gst_ok                                || pkgs+=(gstreamer1-plugins-bad-free gstreamer1-plugins-good)
+    command -v wget >/dev/null 2>&1 || pkgs+=(wget)
+    _gst_ok         || pkgs+=(gstreamer1-plugins-bad-free gstreamer1-plugins-good)
     [[ ${#pkgs[@]} -gt 0 ]] && sudo dnf install -y "${pkgs[@]}"
 }
 
 _install_deps_apt() {
     local pkgs=(dirmngr ca-certificates)
-    command -v winetricks >/dev/null 2>&1 || pkgs+=(winetricks)
-    command -v wget       >/dev/null 2>&1 || pkgs+=(wget)
-    _gst_ok                                || pkgs+=(gstreamer1.0-plugins-bad gstreamer1.0-plugins-good)
+    command -v wget >/dev/null 2>&1 || pkgs+=(wget)
+    _gst_ok         || pkgs+=(gstreamer1.0-plugins-bad gstreamer1.0-plugins-good)
     sudo apt install -y "${pkgs[@]}"
 }
 
@@ -178,15 +177,14 @@ fi
 step "dependencies"
 
 _missing=()
-command -v winetricks >/dev/null 2>&1 || _missing+=(winetricks)
-command -v wget       >/dev/null 2>&1 || _missing+=(wget)
-_gst_ok                                || _missing+=("gstreamer plugins")
+command -v wget >/dev/null 2>&1 || _missing+=(wget)
+_gst_ok         || _missing+=("gstreamer plugins")
 
 if [[ ${#_missing[@]} -gt 0 ]]; then
     echo "  missing: ${_missing[*]}"
     _pm="$(_detect_pm)"
     if [[ "$_pm" == "unknown" ]]; then
-        die "unsupported distro > install winetricks, wget, and gstreamer plugins manually"
+        die "unsupported distro > install wget and gstreamer plugins manually"
     fi
     read -rp "  install automatically? [Y/n]: " _ans </dev/tty
     if [[ "${_ans:-y}" =~ ^[Yy]$ ]]; then
@@ -238,6 +236,9 @@ ok "Wine ${WINE_VERSION} ($WINE_BIN)"
 
 download "WebView2 Runtime 135" "$WEBVIEW2_URL" "$DOWNLOAD_DIR/MicrosoftEdgeWebView2RuntimeInstallerX64.exe"
 
+download "winetricks" "$WINETRICKS_URL" "$WINETRICKS_BIN"
+chmod +x "$WINETRICKS_BIN"
+
 # Use this Wine for all subsequent commands in the install script
 export PATH="$WINE_DIR/bin:$PATH"
 
@@ -262,7 +263,7 @@ else
         ok "corefonts cjkfonts vcrun2022 dotnet48 dxvk vkd3d (already installed)"
     else
         [[ " ${_wt_needed[*]} " == *" dotnet48 "* ]] && warn "This step could take a while, pet a cat or something!"
-        wait_for "${_wt_needed[*]}" env WINEDEBUG=-all winetricks -q "${_wt_needed[@]}"
+        wait_for "${_wt_needed[*]}" env WINEDEBUG=-all "$WINETRICKS_BIN" -q "${_wt_needed[@]}"
     fi
 fi
 
