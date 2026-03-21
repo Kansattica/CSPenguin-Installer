@@ -212,7 +212,7 @@ download() {
         return
     fi
     echo "  - $name"
-    wget -L -q --show-progress --timeout=30 --tries=3 -O "$dest" "$url" || die "$name download failed"
+    wget -q --show-progress --timeout=30 --tries=3 -O "$dest" "$url" || die "$name download failed"
     printf "\r  + %s\n" "$name"
 }
 
