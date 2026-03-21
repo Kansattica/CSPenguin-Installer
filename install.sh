@@ -449,6 +449,7 @@ ok "clipstudio-launch.sh"
 
 DESKTOP_FILE="$HOME/.local/share/applications/clipstudiopaint.desktop"
 DESKTOP_STUDIO="$HOME/.local/share/applications/clipstudio.desktop"
+mkdir -p "$HOME/.local/share/applications"
 
 cat > "$DESKTOP_FILE" << EOF
 [Desktop Entry]
