@@ -207,7 +207,7 @@ if [[ ${#_missing[@]} -gt 0 ]]; then
     fi
 fi
 
-ok "winetricks"
+ok "dependencies"
 
 step "downloads"
 mkdir -p "$DOWNLOAD_DIR" "$LAUNCHER_DIR"
