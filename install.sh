@@ -641,6 +641,14 @@ else
     ok "thumbnailer entry (already registered)"
 fi
 
+if pgrep -fi huion >/dev/null 2>&1; then
+    warn "Huion proprietary driver detected"
+    warn "this can block pen pressure in CSP under Wine"
+    warn "if pressure doesn't work, uninstall the Huion driver,"
+    warn "replug your tablet, and restart. Your kernel likely supports it natively"
+    echo ""
+fi
+
 echo ""
 echo "  done. run Clip Studio Paint from your app launcher or:"
 echo "  $LAUNCH_SCRIPT"
