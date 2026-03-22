@@ -10,9 +10,10 @@ done
 
 DOWNLOAD_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/csp-install"
 
+_install_ok=0
 cleanup() {
     rm -f "$DOWNLOAD_DIR"/*.part 2>/dev/null
-    wineserver -k 2>/dev/null || true
+    [[ $_install_ok -eq 0 ]] && wineserver -k 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -663,6 +664,7 @@ if pgrep -fi huion >/dev/null 2>&1; then
     echo ""
 fi
 
+_install_ok=1
 echo ""
 echo "  done. run Clip Studio Paint from your app launcher or:"
 echo "  $LAUNCH_SCRIPT"

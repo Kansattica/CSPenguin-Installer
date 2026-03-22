@@ -127,7 +127,9 @@ _xinput_list="$(xinput list 2>/dev/null)"
 _xinput_tablets="$(echo "$_xinput_list" | grep -Ei 'wacom|huion|tablet|stylus|pen')"
 if [[ -n "$_xinput_tablets" ]]; then
     echo "$_xinput_tablets" | sed 's/^/    /'
-    _dev_id="$(echo "$_xinput_tablets" | grep -o 'id=[0-9]*' | head -1 | cut -d= -f2)"
+    _stylus_line="$(echo "$_xinput_tablets" | grep -Ei 'stylus|pen' | head -1)"
+    [[ -z "$_stylus_line" ]] && _stylus_line="$(echo "$_xinput_tablets" | head -1)"
+    _dev_id="$(echo "$_stylus_line" | grep -o 'id=[0-9]*' | head -1 | cut -d= -f2)"
     if [[ -n "$_dev_id" ]]; then
         echo "  pressure axis (device $_dev_id):"
         xinput list-props "$_dev_id" 2>/dev/null | grep -i 'pressure\|abs' | sed 's/^/    /' || echo "    (none)"
