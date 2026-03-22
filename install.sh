@@ -10,6 +10,12 @@ done
 
 DOWNLOAD_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/csp-install"
 
+cleanup() {
+    rm -f "$DOWNLOAD_DIR"/*.part 2>/dev/null
+    wineserver -k 2>/dev/null || true
+}
+trap cleanup EXIT
+
 # when run via bash <(curl ...), BASH_SOURCE[0] is a fd with no patches dir nearby
 _candidate="$(cd "$(dirname "${BASH_SOURCE[0]:-/}")" 2>/dev/null && pwd)"
 if [[ -d "$_candidate/patches" ]]; then
@@ -35,7 +41,7 @@ LAUNCHER_STUDIO="$LAUNCHER_DIR/clipstudio-launch.sh"
 CSP_INSTALL_PATH="$WINEPREFIX/drive_c/Program Files/CELSYS/CLIP STUDIO 1.5/CLIP STUDIO PAINT/CLIPStudioPaint.exe"
 STUDIO_EXE="$WINEPREFIX/drive_c/Program Files/CELSYS/CLIP STUDIO 1.5/CLIP STUDIO/CLIPStudio.exe"
 SYS32="$WINEPREFIX/drive_c/windows/system32"
-LOG_FILE="/tmp/csp-install.log"
+LOG_FILE="${DOWNLOAD_DIR}/csp-install.log"
 
 STEP=0
 step()  { STEP=$((STEP + 1)); echo ""; echo "[$STEP] $1"; }
@@ -60,7 +66,9 @@ fetch_asset() {
     fi
     mkdir -p "$(dirname "$dest")"
     echo "  ... fetching $rel"
-    wget -q -O "$dest" "$GH_RAW/$rel" || die "failed to download $rel"
+    local tmp="${dest}.part"
+    wget -q -O "$tmp" "$GH_RAW/$rel" || { rm -f "$tmp"; die "failed to download $rel"; }
+    mv "$tmp" "$dest"
 }
 
 ensure_asset() {
@@ -121,6 +129,7 @@ _install_deps_apt() {
     sudo apt install -y "${pkgs[@]}"
 }
 
+mkdir -p "$DOWNLOAD_DIR"
 : > "$LOG_FILE"
 echo "CSPenguin-Installer > $(date)" >> "$LOG_FILE"
 
@@ -210,7 +219,9 @@ download() {
         return
     fi
     echo "  - $name"
-    wget -q --show-progress --timeout=30 --tries=3 -O "$dest" "$url" || die "$name download failed"
+    local tmp="${dest}.part"
+    wget -q --show-progress --timeout=30 --tries=3 -O "$tmp" "$url" || { rm -f "$tmp"; die "$name download failed"; }
+    mv "$tmp" "$dest"
     printf "\r  + %s\n" "$name"
 }
 
@@ -219,10 +230,11 @@ if [[ -n "${CSP_URL:-}" ]]; then
 else
     ok "Clip Studio Paint (local file)"
 fi
-_wine_tar="$DOWNLOAD_DIR/wine-${WINE_VERSION}-staging-amd64.tar.xz"
+_wine_tar="$DOWNLOAD_DIR/wine-${WINE_VERSION}-amd64.tar.xz"
 if [[ ! -x "$WINE_BIN" ]]; then
     download "Wine ${WINE_VERSION}" "$WINE_URL" "$_wine_tar"
     echo "  - extracting Wine ${WINE_VERSION}..."
+    rm -rf "$WINE_DIR"
     mkdir -p "$LAUNCHER_DIR"
     tar -xf "$_wine_tar" -C "$LAUNCHER_DIR"
     for _d in "$LAUNCHER_DIR/wine-${WINE_VERSION}-staging-amd64" \
@@ -287,10 +299,11 @@ EOF
     fi
 
     # limits.d fallback for non-systemd sessions
+    _current_user="$(whoami)"
     if sudo tee /etc/security/limits.d/cspenguin.conf > /dev/null << EOF
 # CSPenguin-Installer : esync file descriptor limit
-* soft nofile 524288
-* hard nofile 524288
+$_current_user soft nofile 524288
+$_current_user hard nofile 524288
 EOF
     then
         [[ $_esync_set -eq 0 ]] && ok "set via /etc/security/limits.d/cspenguin.conf"
@@ -308,13 +321,13 @@ fi
 
 step "compatibility settings"
 
-run wine reg add "HKCU\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f
+run wine reg add "HKCU\\Software\\Wine" /v Version /t REG_SZ /d "win10" /f || warn "failed to set windows version"
 ok "windows version: win10"
 
-run wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v "concrt140" /t REG_SZ /d "native,builtin" /f
+run wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v "concrt140" /t REG_SZ /d "native,builtin" /f || warn "failed to set concrt140 override"
 ok "dll override: concrt140"
 
-run wine reg add "HKCU\\Software\\Wine\\WineDbg" /v ShowCrashDialog /t REG_DWORD /d 0 /f
+run wine reg add "HKCU\\Software\\Wine\\WineDbg" /v ShowCrashDialog /t REG_DWORD /d 0 /f || warn "failed to suppress crash dialog"
 ok "crash dialog suppressed"
 
 cat > "$WINEPREFIX/dxvk.conf" << 'EOF'
@@ -348,7 +361,7 @@ fi
 cp "$DCOMP_DLL"    "$LAUNCHER_DIR/dcomp.dll"
 cp "$DCOMP_DLL"    "$SYS32/dcomp.dll"
 cp "$PTHREAD_DLL"  "$SYS32/libwinpthread-1.dll"
-run wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v "dcomp" /t REG_SZ /d "native,builtin" /f
+run wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v "dcomp" /t REG_SZ /d "native,builtin" /f || warn "failed to set dcomp override"
 ok "dcomp.dll (WebView2 login/license panels)"
 
 PATCHES_WIN="$SCRIPT_DIR/patches/x86_64-windows-wine11.4"
@@ -376,8 +389,8 @@ if [[ -d "$PATCHES_UNIX" ]] && [[ -d "$WINE_UNIX" ]] && [[ -f "$PATCHES_UNIX/win
     ok "winegstreamer.so (unix side)"
 fi
 
-run wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v "mfplat" /t REG_SZ /d "native,builtin" /f
-run wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v "mfreadwrite" /t REG_SZ /d "native,builtin" /f
+run wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v "mfplat" /t REG_SZ /d "native,builtin" /f || warn "failed to set mfplat override"
+run wine reg add "HKCU\\Software\\Wine\\DllOverrides" /v "mfreadwrite" /t REG_SZ /d "native,builtin" /f || warn "failed to set mfreadwrite override"
 
 step "WebView2 + Clip Studio Paint"
 
@@ -385,10 +398,10 @@ step "WebView2 + Clip Studio Paint"
 warn "WebView2 installer will open and close on its own, this is expected"
 env WINEDEBUG=-all WINEDLLOVERRIDES="winemenubuilder.exe=d" \
     wine "$DOWNLOAD_DIR/MicrosoftEdgeWebView2RuntimeInstallerX64.exe" >> "$LOG_FILE" 2>&1 &
-wait $! || true
+wait $! || warn "WebView2 installer exited with an error (login panels may not work)"
 env WINEDEBUG=-all wineserver -k 2>/dev/null || true
 sleep 1
-ok "WebView2 Runtime 135.0.3179.85"
+ok "WebView2 Runtime"
 
 
 echo ""
@@ -400,11 +413,12 @@ echo "  - waiting for installer to finish..."
 env WINEDEBUG=-all WINEDLLOVERRIDES="winemenubuilder.exe=d" \
     wine "$DOWNLOAD_DIR/$CSP_EXE_NAME" >> "$LOG_FILE" 2>&1 &
 wait $! || die "CSP installer failed"
+[[ -f "$CSP_INSTALL_PATH" ]] || die "CSP executable not found after install — did you complete the installer?"
 ok "Clip Studio Paint"
 
-run wine reg add "HKCU\\Software\\Wine\\AppDefaults\\msedgewebview2.exe" /v Version /t REG_SZ /d "win7" /f
-run wine reg add "HKCU\\Software\\Wine\\AppDefaults\\CLIPStudioPaint.exe" /v Version /t REG_SZ /d "win81" /f
-run wine reg add "HKCU\\Software\\Wine\\AppDefaults\\CLIPStudio.exe" /v Version /t REG_SZ /d "win81" /f
+run wine reg add "HKCU\\Software\\Wine\\AppDefaults\\msedgewebview2.exe" /v Version /t REG_SZ /d "win7" /f || warn "failed to set webview2 version"
+run wine reg add "HKCU\\Software\\Wine\\AppDefaults\\CLIPStudioPaint.exe" /v Version /t REG_SZ /d "win81" /f || warn "failed to set CSP version"
+run wine reg add "HKCU\\Software\\Wine\\AppDefaults\\CLIPStudio.exe" /v Version /t REG_SZ /d "win81" /f || warn "failed to set CLIP STUDIO version"
 
 step "launch scripts + desktop entries"
 
@@ -575,7 +589,7 @@ Environment=WINESERVER=$WINESERVER_BIN
 Environment=WINEDEBUG=-all
 ExecStartPre=-$WINESERVER_BIN -k
 ExecStart=$WINESERVER_BIN -f
-ExecStartPost=/bin/bash -c 'for i in \$(seq 1 20); do sleep 0.5; wid=\$(wmctrl -l | awk "/Wine Desktop/{print \$1}"); [ -n "\$wid" ] && { xdotool windowunmap "\$wid"; break; }; done; exit 0'
+ExecStartPost=-/bin/bash -c 'for i in \$(seq 1 20); do sleep 0.5; wid=\$(wmctrl -l | grep "Wine Desktop" | cut -d" " -f1); [ -n "\$wid" ] && { xdotool windowunmap "\$wid"; break; }; done; exit 0'
 Restart=always
 RestartSec=5s
 
