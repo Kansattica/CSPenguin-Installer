@@ -4,6 +4,7 @@ set -euo pipefail
 VERBOSE=0
 SKIP_WINETRICKS=0
 DRY_RUN=0
+_ESYNC_RESTART=0
 for arg in "$@"; do
     [[ "$arg" == "--verbose"         || "$arg" == "-v" ]] && VERBOSE=1
     [[ "$arg" == "--skip-winetricks" || "$arg" == "-s" ]] && SKIP_WINETRICKS=1
@@ -232,16 +233,15 @@ fi
 # banner + version select
 
 echo ""
-echo -e "    .--."
-echo -e "   |o_o |  ${TEAL}${BOLD}CSPenguin-Installer!${RESET}"
-echo -e "   |:_/ |  ${DIM}Never stop drawing.${RESET}"
-echo -e "  //   \\ \\"
-echo -e " (|     | ) ${DIM}<3 https://eninabox.art${RESET}"
-echo -e "/'\_   _/\`\\"
-echo -e "\___)=(___/"
 echo ""
-echo -e "  ${DIM}this script will ask for your password once or twice${RESET}"
-echo -e "  ${DIM}to install packages and set system limits.${RESET}"
+echo -e "          .--."
+echo -e "         |o_o |  ${TEAL}${BOLD}CSPenguin-Installer!${RESET}"
+echo -e "         |:_/ |  ${DIM}Never stop drawing.${RESET}"
+echo -e "        //   \\ \\"
+echo -e "       (|     | )  ${DIM}this script will ask for your password${RESET}"
+echo -e "      /'\_   _/\`\\  ${DIM}once or twice to install packages${RESET}"
+echo -e "      \___)=(___/  ${DIM}and set system limits.${RESET}"
+echo ""
 echo ""
 echo -e "  ${BOLD}Which version of Clip Studio Paint?${RESET}"
 echo "    1) 5.0.1 (latest)"
@@ -296,7 +296,7 @@ if [[ ${#_missing[@]} -gt 0 ]]; then
     warn "missing: ${_missing[*]}"
     _pm="$(_detect_pm)"
     if [[ "$_pm" == "unknown" ]]; then
-        die "unsupported distro — install wget and gstreamer plugins manually"
+        die "unsupported distro, install wget and gstreamer plugins manually"
     fi
     printf "  ${TEAL}│${RESET} "
     read -rp "  install automatically? [Y/n]: " _ans </dev/tty
@@ -456,7 +456,7 @@ EOF
         if [[ $_esync_set -eq 0 ]]; then
             warn "could not set file limit"
         else
-            info "log out and back in for esync to take effect"
+            _ESYNC_RESTART=1
         fi
     fi
 fi
@@ -477,7 +477,7 @@ else
     if [[ ${#_wt_needed[@]} -eq 0 ]]; then
         ok "winetricks packages (already installed)"
     else
-        [[ " ${_wt_needed[*]} " == *" dotnet48 "* ]] && warn "this can take 10-30 min — go pet a cat!"
+        [[ " ${_wt_needed[*]} " == *" dotnet48 "* ]] && warn "this can take 10-30 min, go pet a cat!"
         wait_for "${_wt_needed[*]}" env WINEDEBUG=-all "$WINETRICKS_BIN" -q "${_wt_needed[@]}"
     fi
 fi
@@ -546,14 +546,14 @@ if [[ $DRY_RUN -eq 1 ]]; then
     ok "WebView2 Runtime (dry run)"
     gap
     msg "${BOLD}press enter to launch the CSP installer.${RESET}"
-    msg "${DIM}go through it normally — we'll wait.${RESET}"
+    msg "${DIM}complete the installer as normal.${RESET}"
     gap
     printf "  ${TEAL}│${RESET}   "
     read -rp "press enter to continue..." </dev/tty
     ok "Clip Studio Paint (dry run)"
 else
     info "installing WebView2 (for login/store panels)."
-    warn "WebView2 will flash open briefly — that's normal"
+    warn "WebView2 will flash open briefly, that's normal"
     env WINEDEBUG=-all WINEDLLOVERRIDES="winemenubuilder.exe=d" \
         wine "$DOWNLOAD_DIR/MicrosoftEdgeWebView2RuntimeInstallerX64.exe" >> "$LOG_FILE" 2>&1 &
     wait $! || warn "WebView2 installer exited with an error"
@@ -563,7 +563,7 @@ else
 
     gap
     msg "${BOLD}press enter to launch the CSP installer.${RESET}"
-    msg "${DIM}go through it normally — we'll wait.${RESET}"
+    msg "${DIM}complete the installer as normal.${RESET}"
     gap
     printf "  ${TEAL}│${RESET}   "
     read -rp "press enter to continue..." </dev/tty
@@ -571,7 +571,7 @@ else
     env WINEDEBUG=-all WINEDLLOVERRIDES="winemenubuilder.exe=d" \
         wine "$DOWNLOAD_DIR/$CSP_EXE_NAME" >> "$LOG_FILE" 2>&1 &
     wait $! || die "CSP installer failed"
-    [[ -f "$CSP_INSTALL_PATH" ]] || die "CSP not found after install — did you complete the installer?"
+    [[ -f "$CSP_INSTALL_PATH" ]] || die "CSP not found after install, did you complete the installer?"
     ok "Clip Studio Paint"
 
     run wine reg add "HKCU\\Software\\Wine\\AppDefaults\\msedgewebview2.exe" /v Version /t REG_SZ /d "win7" /f || warn "failed to set webview2 version"
@@ -700,7 +700,7 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" == *"KDE"* ]]; then
             ok "KDE window rules (already set)"
         fi
     else
-        warn "kwriteconfig not found — set window rules manually"
+        warn "kwriteconfig not found, set window rules manually"
     fi
 fi
 
@@ -754,7 +754,7 @@ if pgrep -fi huion >/dev/null 2>&1; then
     warn "Huion proprietary driver detected"
     info "this can block pen pressure in CSP under Wine"
     info "try uninstalling the Huion driver if pressure"
-    info "doesn't work — your kernel likely supports it"
+    info "doesn't work, your kernel likely supports it"
     gap
 fi
 
@@ -767,18 +767,6 @@ if [[ "${_prewarm,,}" != "n" ]]; then
     if [[ $DRY_RUN -eq 1 ]]; then
         ok "wineserver service (dry run)"
     else
-        _pw_missing=()
-        command -v wmctrl  >/dev/null 2>&1 || _pw_missing+=(wmctrl)
-        command -v xdotool >/dev/null 2>&1 || _pw_missing+=(xdotool)
-        if [[ ${#_pw_missing[@]} -gt 0 ]]; then
-            info "installing: ${_pw_missing[*]}"
-            case "$(_detect_pm)" in
-                pacman) sudo pacman -S --needed --noconfirm "${_pw_missing[@]}" ;;
-                dnf)    sudo dnf install -y "${_pw_missing[@]}" ;;
-                apt)    sudo apt install -y "${_pw_missing[@]}" ;;
-                *)      warn "install ${_pw_missing[*]} manually" ;;
-            esac
-        fi
         mkdir -p "$HOME/.config/systemd/user"
         cat > "$HOME/.config/systemd/user/csp-wineserver.service" << EOF
 [Unit]
@@ -792,7 +780,6 @@ Environment=WINESERVER=$WINESERVER_BIN
 Environment=WINEDEBUG=-all
 ExecStartPre=-$WINESERVER_BIN -k
 ExecStart=$WINESERVER_BIN -f
-ExecStartPost=-/bin/bash -c 'for i in \$(seq 1 20); do sleep 0.5; wid=\$(wmctrl -l | grep "Wine Desktop" | cut -d" " -f1); [ -n "\$wid" ] && { xdotool windowunmap "\$wid"; break; }; done; exit 0'
 Restart=always
 RestartSec=5s
 
@@ -823,12 +810,19 @@ echo -e "  find ${BOLD}Clip Studio Paint${RESET} in your"
 echo -e "  app menu, or launch via terminal:"
 echo -e "  ${DIM}$LAUNCH_SCRIPT${RESET}"
 echo ""
+if [[ $_ESYNC_RESTART -eq 1 ]]; then
+echo -e "  ${AMBER}note${RESET}"
+echo -e "    log out and back in for esync to take effect"
+echo ""
+fi
 echo -e "  ${AMBER}tips${RESET}"
 echo -e "    ${DIM}pen pressure${RESET}  Preferences > Tablet > mouse mode"
 echo -e "    ${DIM}hidpi${RESET}         winecfg > Graphics > DPI"
 echo ""
-echo -e "  ${DIM}having issues? run the debug script${RESET}"
-echo -e "  ${DIM}and open an issue on GitHub.${RESET}"
+echo -e "  ${DIM}something not working? open an issue at${RESET}"
+echo -e "  ${DIM}https://github.com/parka6060/CSPenguin-Installer${RESET}"
+echo ""
+echo -e "  ${DIM}installer by https://eninabox.art${RESET}"
 echo ""
 echo -e "  ${TEAL}${_divider}${RESET}"
 echo ""
