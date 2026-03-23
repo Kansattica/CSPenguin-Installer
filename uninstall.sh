@@ -97,14 +97,7 @@ if [[ -f "$_kwinrc" ]] && grep -q "CSPenguin:" "$_kwinrc" 2>/dev/null; then
     # find and remove CSPenguin rule groups
     _rules_removed=0
     for _group in $(grep -B1 "CSPenguin:" "$_kwinrc" | grep '^\[' | tr -d '[]'); do
-        if command -v kwriteconfig6 >/dev/null 2>&1; then
-            kwriteconfig6 --file kwinrulesrc --group "$_group" --delete-group
-        elif command -v kwriteconfig5 >/dev/null 2>&1; then
-            kwriteconfig5 --file kwinrulesrc --group "$_group" --delete-group
-        else
-            # fallback: remove group manually via sed
-            sed -i "/^\[$_group\]/,/^\[/{ /^\[$_group\]/d; /^\[/!d; }" "$_kwinrc"
-        fi
+        sed -i "/^\[$_group\]/,/^\[/{ /^\[$_group\]/d; /^\[/!d; }" "$_kwinrc"
         _rules_removed=$((_rules_removed + 1))
     done
     if [[ $_rules_removed -gt 0 ]]; then
