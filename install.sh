@@ -675,7 +675,6 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" == *"KDE"* ]]; then
     if [[ -n "$_kwc" ]]; then
         if ! grep -q "CSPenguin:" "$_kwinrc" 2>/dev/null; then
             _uuid_below="cspenguin-$(uuidgen 2>/dev/null || echo below-rule)"
-            _uuid_ghost="cspenguin-$(uuidgen 2>/dev/null || echo ghost-rule)"
 
             $_kwc --file kwinrulesrc --group "$_uuid_below" --key Description "CSPenguin: CSP below for popups"
             $_kwc --file kwinrulesrc --group "$_uuid_below" --key below true
@@ -683,24 +682,13 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" == *"KDE"* ]]; then
             $_kwc --file kwinrulesrc --group "$_uuid_below" --key wmclass "clipstudiopaint.exe"
             $_kwc --file kwinrulesrc --group "$_uuid_below" --key wmclassmatch 2
 
-            $_kwc --file kwinrulesrc --group "$_uuid_ghost" --key Description "CSPenguin: Hide Wine ghost windows"
-            $_kwc --file kwinrulesrc --group "$_uuid_ghost" --key wmclass "clipstudiopaint.exe"
-            $_kwc --file kwinrulesrc --group "$_uuid_ghost" --key wmclassmatch 2
-            $_kwc --file kwinrulesrc --group "$_uuid_ghost" --key types 32
-            $_kwc --file kwinrulesrc --group "$_uuid_ghost" --key skipswitcher true
-            $_kwc --file kwinrulesrc --group "$_uuid_ghost" --key skipswitcherrule 3
-            $_kwc --file kwinrulesrc --group "$_uuid_ghost" --key skiptaskbar true
-            $_kwc --file kwinrulesrc --group "$_uuid_ghost" --key skiptaskbarrule 3
-            $_kwc --file kwinrulesrc --group "$_uuid_ghost" --key skippager true
-            $_kwc --file kwinrulesrc --group "$_uuid_ghost" --key skippagerrule 3
-
             _existing_rules=$($_krc --file kwinrulesrc --group General --key rules 2>/dev/null || true)
             _existing_count=$($_krc --file kwinrulesrc --group General --key count 2>/dev/null || echo 0)
-            _new_count=$((_existing_count + 2))
+            _new_count=$((_existing_count + 1))
             if [[ -n "$_existing_rules" ]]; then
-                _new_rules="${_existing_rules},${_uuid_below},${_uuid_ghost}"
+                _new_rules="${_existing_rules},${_uuid_below}"
             else
-                _new_rules="${_uuid_below},${_uuid_ghost}"
+                _new_rules="${_uuid_below}"
             fi
             $_kwc --file kwinrulesrc --group General --key count "$_new_count"
             $_kwc --file kwinrulesrc --group General --key rules "$_new_rules"
