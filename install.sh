@@ -625,22 +625,23 @@ WINE_PID=\$!
 # for near-instant reaction to any future fullscreen changes.
 if command -v wmctrl &>/dev/null && command -v xprop &>/dev/null; then
     (
-        _csp_win=""
-        for _i in \$(seq 1 120); do
-            _csp_win=\$(xprop -root _NET_CLIENT_LIST 2>/dev/null | tr ',' '\n' | while IFS= read -r _r; do
+        # Poll for any clipstudiopaint window that goes fullscreen
+        while kill -0 "\$WINE_PID" 2>/dev/null; do
+            while IFS= read -r _wid; do
+                _st=\$(xprop -id "\$_wid" _NET_WM_STATE 2>/dev/null)
+                if [[ "\$_st" == *FULLSCREEN* ]]; then
+                    wmctrl -ir "\$_wid" -b remove,fullscreen 2>/dev/null || true
+                    # Window found and fixed — switch to event-based watching
+                    xprop -id "\$_wid" -spy _NET_WM_STATE 2>/dev/null | while IFS= read -r _line; do
+                        [[ "\$_line" == *FULLSCREEN* ]] && wmctrl -ir "\$_wid" -b remove,fullscreen 2>/dev/null || true
+                    done
+                    exit 0
+                fi
+            done < <(xprop -root _NET_CLIENT_LIST 2>/dev/null | tr ',' '\n' | while IFS= read -r _r; do
                 _w=\$(echo "\$_r" | tr -d ' #')
-                _c=\$(xprop -id "0x\$_w" WM_CLASS 2>/dev/null)
-                _n=\$(xprop -id "0x\$_w" WM_NAME 2>/dev/null)
-                [[ "\$_c" == *clipstudiopaint* && "\$_n" == *"CLIP STUDIO PAINT"* ]] && echo "0x\$_w"
-            done | head -1)
-            [[ -n "\$_csp_win" ]] && break
-            sleep 0.25
-        done
-        [[ -z "\$_csp_win" ]] && exit 0
-        _st=\$(xprop -id "\$_csp_win" _NET_WM_STATE 2>/dev/null)
-        [[ "\$_st" == *FULLSCREEN* ]] && wmctrl -ir "\$_csp_win" -b remove,fullscreen 2>/dev/null || true
-        xprop -id "\$_csp_win" -spy _NET_WM_STATE 2>/dev/null | while IFS= read -r _line; do
-            [[ "\$_line" == *FULLSCREEN* ]] && wmctrl -ir "\$_csp_win" -b remove,fullscreen 2>/dev/null || true
+                [[ \$(xprop -id "0x\$_w" WM_CLASS 2>/dev/null) == *clipstudiopaint* ]] && echo "0x\$_w"
+            done)
+            sleep 0.5
         done
     ) &
 fi
