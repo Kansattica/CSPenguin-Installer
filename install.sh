@@ -202,21 +202,27 @@ _gst_ok() { command -v gst-inspect-1.0 >/dev/null 2>&1 && gst-inspect-1.0 h264pa
 
 _install_deps_pacman() {
     local pkgs=()
-    command -v wget >/dev/null 2>&1 || pkgs+=(wget)
+    command -v wget   >/dev/null 2>&1 || pkgs+=(wget)
+    command -v wmctrl >/dev/null 2>&1 || pkgs+=(wmctrl)
+    command -v xprop  >/dev/null 2>&1 || pkgs+=(xorg-xprop)
     _gst_ok         || pkgs+=(gst-plugins-bad gst-plugins-good)
     [[ ${#pkgs[@]} -gt 0 ]] && sudo pacman -S --needed --noconfirm "${pkgs[@]}"
 }
 
 _install_deps_dnf() {
     local pkgs=()
-    command -v wget >/dev/null 2>&1 || pkgs+=(wget)
+    command -v wget   >/dev/null 2>&1 || pkgs+=(wget)
+    command -v wmctrl >/dev/null 2>&1 || pkgs+=(wmctrl)
+    command -v xprop  >/dev/null 2>&1 || pkgs+=(xprop)
     _gst_ok         || pkgs+=(gstreamer1-plugins-bad-free gstreamer1-plugins-good)
     [[ ${#pkgs[@]} -gt 0 ]] && sudo dnf install -y "${pkgs[@]}"
 }
 
 _install_deps_apt() {
     local pkgs=(dirmngr ca-certificates)
-    command -v wget >/dev/null 2>&1 || pkgs+=(wget)
+    command -v wget   >/dev/null 2>&1 || pkgs+=(wget)
+    command -v wmctrl >/dev/null 2>&1 || pkgs+=(wmctrl)
+    command -v xprop  >/dev/null 2>&1 || pkgs+=(x11-utils)
     _gst_ok         || pkgs+=(gstreamer1.0-plugins-bad gstreamer1.0-plugins-good)
     sudo apt install -y "${pkgs[@]}"
 }
@@ -608,10 +614,38 @@ export WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--no-sandbox"
 CSP_EXE="$CSP_INSTALL_PATH"
 if [[ -n "\$1" ]] && command -v winepath &>/dev/null; then
     WIN_PATH="\$(WINEPREFIX="$WINEPREFIX" winepath --windows "\$1")"
-    exec wine "\$CSP_EXE" "\$WIN_PATH"
+    wine "\$CSP_EXE" "\$WIN_PATH" &
 else
-    exec wine "\$CSP_EXE"
+    wine "\$CSP_EXE" &
 fi
+WINE_PID=\$!
+
+# Strip fullscreen state whenever CSP sets it (Wine maps borderless-maximized to fullscreen).
+# Poll quickly until the main paint window appears, fix it immediately, then use xprop -spy
+# for near-instant reaction to any future fullscreen changes.
+if command -v wmctrl &>/dev/null && command -v xprop &>/dev/null; then
+    (
+        _csp_win=""
+        for _i in \$(seq 1 120); do
+            _csp_win=\$(xprop -root _NET_CLIENT_LIST 2>/dev/null | tr ',' '\n' | while IFS= read -r _r; do
+                _w=\$(echo "\$_r" | tr -d ' #')
+                _c=\$(xprop -id "0x\$_w" WM_CLASS 2>/dev/null)
+                _n=\$(xprop -id "0x\$_w" WM_NAME 2>/dev/null)
+                [[ "\$_c" == *clipstudiopaint* && "\$_n" == *"CLIP STUDIO PAINT"* ]] && echo "0x\$_w"
+            done | head -1)
+            [[ -n "\$_csp_win" ]] && break
+            sleep 0.25
+        done
+        [[ -z "\$_csp_win" ]] && exit 0
+        _st=\$(xprop -id "\$_csp_win" _NET_WM_STATE 2>/dev/null)
+        [[ "\$_st" == *FULLSCREEN* ]] && wmctrl -ir "\$_csp_win" -b remove,fullscreen 2>/dev/null || true
+        xprop -id "\$_csp_win" -spy _NET_WM_STATE 2>/dev/null | while IFS= read -r _line; do
+            [[ "\$_line" == *FULLSCREEN* ]] && wmctrl -ir "\$_csp_win" -b remove,fullscreen 2>/dev/null || true
+        done
+    ) &
+fi
+
+wait "\$WINE_PID"
 LAUNCHEOF
 chmod +x "$LAUNCH_SCRIPT"
 
@@ -679,6 +713,8 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" == *"KDE"* ]]; then
             $_kwc --file kwinrulesrc --group "$_uuid_below" --key Description "CSPenguin: CSP below for popups"
             $_kwc --file kwinrulesrc --group "$_uuid_below" --key below true
             $_kwc --file kwinrulesrc --group "$_uuid_below" --key belowrule 3
+            $_kwc --file kwinrulesrc --group "$_uuid_below" --key fullscreen false
+            $_kwc --file kwinrulesrc --group "$_uuid_below" --key fullscreenrule 3
             $_kwc --file kwinrulesrc --group "$_uuid_below" --key wmclass "clipstudiopaint.exe"
             $_kwc --file kwinrulesrc --group "$_uuid_below" --key wmclassmatch 2
 
@@ -697,7 +733,22 @@ if [[ "${XDG_CURRENT_DESKTOP:-}" == *"KDE"* ]]; then
                 dbus-send --type=method_call --dest=org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null || true
             ok "KDE window rules"
         else
-            ok "KDE window rules (already set)"
+            # Upgrade path: add fullscreen=false if missing from existing rule
+            _csp_uuid=$(awk -F'[][]' '/^\[/{grp=$2} /CSPenguin:/{print grp; exit}' "$_kwinrc" 2>/dev/null || true)
+            if [[ -n "$_csp_uuid" ]]; then
+                _fs_val=$($_krc --file kwinrulesrc --group "$_csp_uuid" --key fullscreen 2>/dev/null || true)
+                if [[ "$_fs_val" != "false" ]]; then
+                    $_kwc --file kwinrulesrc --group "$_csp_uuid" --key fullscreen false
+                    $_kwc --file kwinrulesrc --group "$_csp_uuid" --key fullscreenrule 3
+                    qdbus org.kde.KWin /KWin reconfigure 2>/dev/null || \
+                        dbus-send --type=method_call --dest=org.kde.KWin /KWin org.kde.KWin.reconfigure 2>/dev/null || true
+                    ok "KDE window rules (updated)"
+                else
+                    ok "KDE window rules (already set)"
+                fi
+            else
+                ok "KDE window rules (already set)"
+            fi
         fi
     else
         warn "kwriteconfig not found, set window rules manually"
