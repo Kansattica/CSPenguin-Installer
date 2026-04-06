@@ -2,7 +2,7 @@
 
 **CSPenguin-Installer** is an install script and patch set for CLIP STUDIO PAINT. It fixes the **asset store, login panels, file thumbnails, and timelapse/animation export** all while being very easy to install.
 
-The current project is **functional** but in testing! The script is tested throughly in **CachyOS + KDE**, I'll find time to to test on other distros as soon as I survive my semester! I would really appreciate people testing it on other distros and reporting any issues they find!
+The current project is **functional**! Thank you for those who reported issues when testing the script. If you have any issues during install please submit a report under the issues tab of the project.
 
 Supports CSP 4.x & 5.x at the moment.
 
@@ -61,10 +61,10 @@ winetricks <package>
 - Timelapse should work 100%, but animation export at non-default framerates could break encoding; not thoroughly tested.
 - The timelapse patch DLLs are built against the bundled Wine version 11.4. Trying to use them elsewhere is not recommended.
 - The installer can take a while, especially if downloading dotnet files.
-- The first launch of CSP will be slow. Restarting your PC helps with subsequent launches!
+- Launching CSP is slow on my system it takes a full min for CSP to appear. This is unfortunatly not an easy problem to solve, but I'm actively experimenting and hopefully will find a solution.
 
 ## Support
-This project is my gift to the community. If you have problems feel free to open an issue, or get in touch with me. But please do not expect me to fix installs on a case by case basis.
+If you have problems please first check the issues tab and see if there's an existing solution, if not submit an issue. 
 
 ## Uninstall
 
