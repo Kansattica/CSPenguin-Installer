@@ -1,4 +1,5 @@
 ![CSP running on Linux](assets/Screenshot_20260318_041049.png)
+# video tutorial 👇
 [![Watch the tutorial](https://img.youtube.com/vi/iYhEm32Lr4Y/maxresdefault.jpg)](https://www.youtube.com/watch?v=iYhEm32Lr4Y)
 
 **CSPenguin-Installer** is an install script and patch set for CLIP STUDIO PAINT. It fixes the **asset store, login panels, file thumbnails, and timelapse/animation export** all while being very easy to install.
