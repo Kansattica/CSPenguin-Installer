@@ -239,6 +239,7 @@ fi
 # banner + version select
 
 echo "Installing as $(whoami). Can break if we're root and not whoever owns $(realpath ~)."
+echo "Log file is at ${LOG_FILE} if you want to follow along that way."
 echo ""
 echo ""
 echo -e "          .--."
