@@ -91,6 +91,9 @@ STUDIO_EXE="$WINEPREFIX/drive_c/Program Files/CELSYS/CLIP STUDIO 1.5/CLIP STUDIO
 SYS32="$WINEPREFIX/drive_c/windows/system32"
 LOG_FILE="${DOWNLOAD_DIR}/csp-install.log"
 
+# vc_redist doesn't install without this set, apparently.
+XDG_RUNTIME_DIR="/run/user/$(id -u)"
+
 # helpers
 run() {
     [[ $DRY_RUN -eq 1 ]] && return 0
