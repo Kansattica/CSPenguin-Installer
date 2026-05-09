@@ -257,7 +257,6 @@ echo ""
 
 CSP_VERSION="" CSP_URL="" CSP_EXE_NAME=""
 while true; do
-    read -rp "  choice [1]: " choice </dev/tty
     choice="${choice:-1}"
     case "$choice" in
         1) CSP_VERSION="501"; break ;;
@@ -305,7 +304,6 @@ if [[ ${#_missing[@]} -gt 0 ]]; then
         die "unsupported distro, install wget and gstreamer plugins manually"
     fi
     printf "  ${TEAL}│${RESET} "
-    read -rp "  install automatically? [Y/n]: " _ans </dev/tty
     if [[ "${_ans:-y}" =~ ^[Yy]$ ]]; then
         if [[ $DRY_RUN -eq 1 ]]; then
             ok "dependencies (dry run)"
@@ -572,7 +570,6 @@ else
     msg "${DIM}complete the installer as normal.${RESET}"
     gap
     printf "  ${TEAL}│${RESET}   "
-    read -rp "press enter to continue..." </dev/tty
     info "CSP installer running, come back when done..."
     env WINEDEBUG=-all WINEDLLOVERRIDES="winemenubuilder.exe=d" \
         wine "$DOWNLOAD_DIR/$CSP_EXE_NAME" >> "$LOG_FILE" 2>&1 &
@@ -814,7 +811,7 @@ info "pre-warming the wineserver at login"
 info "reduces startup time by ~5-10s."
 gap
 printf "  ${TEAL}│${RESET}   "
-read -rp "enable wineserver pre-warm? [Y/n] " _prewarm </dev/tty
+_prewarm="n"
 if [[ "${_prewarm,,}" != "n" ]]; then
     if [[ $DRY_RUN -eq 1 ]]; then
         ok "wineserver service (dry run)"
