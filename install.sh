@@ -238,6 +238,7 @@ fi
 
 # banner + version select
 
+echo "Installing as $(whoami). Can break if we're root and not whoever owns $(realpath .)."
 echo ""
 echo ""
 echo -e "          .--."
