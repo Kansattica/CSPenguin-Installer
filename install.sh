@@ -92,7 +92,8 @@ SYS32="$WINEPREFIX/drive_c/windows/system32"
 LOG_FILE="${DOWNLOAD_DIR}/csp-install.log"
 
 # vc_redist doesn't install without this set, apparently.
-export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+# might have just needed to sudo with a login shell
+#export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 
 # helpers
 run() {
