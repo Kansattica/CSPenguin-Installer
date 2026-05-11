@@ -856,7 +856,7 @@ fi
 
 # done
 
-touch "${DONE_FILE}"
+echo "Princess says hi!" > "${DONE_FILE}"
 _install_ok=1
 
 _divider=$(printf '━%.0s' $(seq 1 46))
