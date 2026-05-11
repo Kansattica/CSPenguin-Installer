@@ -239,7 +239,7 @@ fi
 
 if [ -f "${DONE_FILE}" ]; then
 	echo "I think we already installed correctly. If this isn't the case, delete ${DONE_FILE} and try again.";
-	return 0;
+	exit 0;
 fi
 
 # banner + version select
