@@ -90,10 +90,7 @@ CSP_INSTALL_PATH="$WINEPREFIX/drive_c/Program Files/CELSYS/CLIP STUDIO 1.5/CLIP 
 STUDIO_EXE="$WINEPREFIX/drive_c/Program Files/CELSYS/CLIP STUDIO 1.5/CLIP STUDIO/CLIPStudio.exe"
 SYS32="$WINEPREFIX/drive_c/windows/system32"
 LOG_FILE="${DOWNLOAD_DIR}/csp-install.log"
-
-# vc_redist doesn't install without this set, apparently.
-# might have just needed to sudo with a login shell
-#export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+DONE_FILE="$LAUNCHER_DIR/is_done"
 
 # helpers
 run() {
@@ -240,8 +237,14 @@ else
     echo "CSPenguin-Installer > $(date)" >> "$LOG_FILE"
 fi
 
+if [ -f "${DONE_FILE}" ]; then
+	echo "I think we already installed correctly. If this isn't the case, delete ${DONE_FILE} and try again.";
+	return 0;
+fi
+
 # banner + version select
 
+echo "${DONE_FILE} not found, installing.";
 echo "Installing as $(whoami). Can break if we're root and not whoever owns $(realpath ~)."
 echo "Log file is at ${LOG_FILE} if you want to follow along that way."
 echo ""
@@ -853,6 +856,7 @@ fi
 
 # done
 
+touch "${DONE_FILE}"
 _install_ok=1
 
 _divider=$(printf '━%.0s' $(seq 1 46))
